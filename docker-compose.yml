@@ -1,0 +1,49 @@
+services:
+  db:
+    image: mariadb:10.6
+    container_name: moodle-db-migration
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ${INSTALL_DIR}/dumps/migration:/docker-entrypoint-initdb.d
+    networks:
+      - moodle-net
+
+  moodle:
+    image: moodle-custom:latest
+    container_name: moodle-migration
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - db
+    networks:
+      - moodle-net
+      
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: pma-migration
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER}
+      PMA_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      - db
+    networks:
+      - moodle-net
+
+volumes:
+  db_data:
+
+networks:
+  moodle-net:
+    driver: bridge
